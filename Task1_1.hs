@@ -8,7 +8,7 @@ module Task1_1 where
 import Todo(todo)
 
 data Op = Add
-          | Substract
+          | Subtract
           | Multiply
           deriving(Show,Eq)
 
@@ -26,7 +26,7 @@ data Term = IntConstant{ intValue :: Int }           -- числовая кон�
 
 (|-|) :: Term -> Term -> Term
 (|-|) (IntConstant l) (IntConstant r) = IntConstant (l - r)
-(|-|) l r                             = BinaryTerm Substract l r
+(|-|) l r                             = BinaryTerm Subtract l r
 
 (|*|) :: Term -> Term -> Term
 (|*|) (IntConstant l) (IntConstant r) = IntConstant (l * r)
@@ -51,7 +51,7 @@ replaceVar varName replacement (BinaryTerm op lhv rhv)  = BinaryTerm op newLhv n
 evaluate :: Term -> Term
 evaluate const@(IntConstant _)          = const
 evaluate (BinaryTerm Add lhv rhv)       = (evaluate lhv) |+| (evaluate rhv)
-evaluate (BinaryTerm Substract lhv rhv) = (evaluate lhv) |-| (evaluate rhv)
+evaluate (BinaryTerm Subtract lhv rhv)  = (evaluate lhv) |-| (evaluate rhv)
 evaluate (BinaryTerm Multiply lhv rhv)  = (evaluate lhv) |*| (evaluate rhv)
 evaluate _                              = error "Non constant term"                                                                         
 
