@@ -12,7 +12,7 @@ sin :: Double -> Double
 sin x = sum (take 10 terms)
     where terms = map (taylor_sin angle) [0,1..]
           angle = (fmod (x + pi) (2 * pi)) - pi
-          fmod a b = a - (fromIntegral $ truncate (a / b)) * b
+          fmod a b = a - (fromIntegral $ floor (a / b)) * b
           taylor_sin y n = ((-1) ** n) * (y ** k) / (product [1..k])
               where k = 2 * n + 1
        
@@ -55,7 +55,7 @@ type Point2D = (Double, Double)
 -- многоугольник задан списком координат
 shapeArea :: [Point2D] -> Double
 shapeArea points = 0.5 * abs (sumOfProducts xs (shift ys) - sumOfProducts (shift xs) ys) 
-    where sumOfProducts a b = sum $ (zipWith (*)) a b 
+    where sumOfProducts a b = sum (zipWith (*) a b)
           shift (h:t) = t ++ [h]
           xs = map fst points
           ys = map snd points

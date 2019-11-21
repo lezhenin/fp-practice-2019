@@ -62,10 +62,10 @@ remove i t@(Node tk tv EmptyTree (Leaf lk lv)) | i == lk   = Leaf tk tv
 remove i (Node tk tv lhs rhs)                  | i <  tk   = Node tk tv (remove i lhs) rhs
                                                | i >  tk   = Node tk tv lhs (remove i rhs)
                                                | i == tk   = Node mk mv lhs (remove mk rhs)
-                                                                 where (mk, mv) = minimum rhs
-                                                                       minimum (Leaf tk tv)             = (tk, tv)
-                                                                       minimum (Node tk tv EmptyTree _) = (tk, tv)
-                                                                       minimum (Node _ _ lhv _)         = minimum lhv
+                                                    where (mk, mv) = minimum rhs
+                                                              where minimum (Leaf tk tv)             = (tk, tv)
+                                                                    minimum (Node tk tv EmptyTree _) = (tk, tv)
+                                                                    minimum (Node _ _ lhv _)         = minimum lhv
 
 -- Поиск ближайшего снизу ключа относительно заданного
 nearestLE :: Integer -> TreeMap v -> Maybe (Integer, v)
@@ -91,7 +91,7 @@ listFromTree (Node tk tv lhs rhs) = (listFromTree lhs) ++ [(tk, tv)] ++ (listFro
 -- Поиск k-той порядковой статистики дерева
 kMean :: Integer -> TreeMap v -> Maybe (Integer, v)
 kMean i t = listLookup i lst
-                where lst = listFromTree t
-                      listLookup _ []     = Nothing
-                      listLookup 1 (x:_)  = Just x
-                      listLookup n (_:xs) = listLookup (n - 1) xs
+    where lst = listFromTree t
+          listLookup _ []     = Nothing
+          listLookup 1 (x:_)  = Just x
+          listLookup n (_:xs) = listLookup (n - 1) xs
