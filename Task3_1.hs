@@ -14,12 +14,10 @@ data WeirdPeanoNumber = Zero | Succ WeirdPeanoNumber | Pred WeirdPeanoNumber
 -- Реализуйте все классы типов, которым должны отвечать целые числа
 
 instance Show WeirdPeanoNumber where
-
     show x = "WeirdPeanoNumber(" ++ (show $ toInteger $ x) ++ ")"
 
 
 instance Num WeirdPeanoNumber where
-    
     Zero + b                = b
     (Succ a) + b@(Succ _)   = Succ (a + b)
     (Pred a) + b@(Pred _)   = Pred (a + b) 
@@ -50,31 +48,26 @@ instance Num WeirdPeanoNumber where
 
 
 instance Eq WeirdPeanoNumber where
-
     a == b = case (a - b) of Zero      -> True
                              otherwise -> False 
 
 
 instance Ord WeirdPeanoNumber where
-
     compare a b = case signum (a - b) of Zero        -> EQ
                                          (Succ Zero) -> GT
                                          (Pred Zero) -> LT
 
                                          
 instance Real WeirdPeanoNumber where
-
     toRational x = (toInteger x) % 1
                       
 
 instance Enum WeirdPeanoNumber where
-    
     toEnum   = fromInteger . toInteger
     fromEnum = fromInteger . toInteger 
     
     
 instance Integral WeirdPeanoNumber where
-    
     quotRem a Zero = throw DivideByZero
     quotRem a b | b < 0     = (negate q, r) where (q, r) = quotRem a (negate b)
     quotRem a b | a < 0     = (negate q, negate r) where (q, r) = quotRem (negate a) b                           
