@@ -12,10 +12,10 @@ instance Show a => Show (Zipper a) where
     show (Zipper [] []) = "Zipper([][])"
     show (Zipper l r) = "Zipper([" ++ (showL l) ++ "][" ++ (showR r) ++ "])"
         where showL [] = ""
-              showR [] = ""
               showL [e] = show e
-              showR [e] = show e
               showL (lh:lt) = (showL lt) ++ ", " ++ (show lh)
+              showR [] = ""
+              showR [e] = show e
               showR (rh:rt) = (show rh) ++ ", " ++ (showR rt)
 
 fromList :: [a] -> Zipper a
@@ -45,22 +45,33 @@ removeLeft (Zipper (_:lt) r) = Zipper lt r
 -- вставки подсписка в середину и выделения подсписка
 
 concat :: Zipper a -> Zipper a -> Zipper a
-concat left right = todo
+concat left@(Zipper ll lr) right = (Zipper ll (lr ++ rr))
+    where (Zipper _ rr) = goStart right
 
 insertManyAt :: Int -> Zipper a -> Zipper a -> Zipper a
-insertManyAt index what into = todo
+insertManyAt index what@(Zipper wl wr) into = (Zipper (l ++ wl) (wr ++ r)) 
+    where (Zipper l r) = (goRightMany index (goStart into))
 
 subZipper :: Int -> Int -> Zipper a -> Zipper a
-subZipper from to into = (removeRigthMany from go( goEnd removeLeftMany ))
+subZipper from to into = goStart (Zipper il []) 
+    where (Zipper il _) = goRightMany (to - from) (removeRightMany from (goStart into)) 
 
-removeRigthMany 0 z = z
-removeRigthMany n z = removeRigthMany (n - 1) (removeRigt z)
+-- Вспомогательные функции  
+ 
+removeRightMany 0 z = z
+removeRightMany n z = removeRightMany (n - 1) (removeRight z)
 
 removeLeftMany 0 z = z
 removeLeftMany n z = removeLeftMany (n - 1) (removeLeft z)
 
-goStart z@(Zipper l []) = z
+goLeftMany 0 z = z
+goLeftMany n z = goLeftMany (n - 1) (goLeft z)
+
+goRightMany 0 z = z
+goRightMany n z = goRightMany (n - 1) (goRight z)
+
+goStart z@(Zipper [] _) = z
 goStart z = goStart $ goLeft $ z
 
-goEnd z@(Zipper [] r) = z
+goEnd z@(Zipper _ []) = z
 goEnd z = goEnd $ goRight $ z
