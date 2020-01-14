@@ -45,17 +45,29 @@ insertAt (DCons left value DNil) 1 newValue = list
     where list = update (DCons left value (DCons list newValue DNil))
 insertAt (DCons left value right) 0 newValue = list
     where list = update (DCons left newValue (DCons list value right))
-insertAt (DCons left value right) index newValue = list
-    where list = (DCons left value (insertAt right (index - 1) newValue))
+insertAt (DCons _ _ right) index newValue = list
+    where list = left (insertAt right (index - 1) newValue)
 
 removeAt :: DList a -> Int -> DList a
-removeAt DNil 0 = DNil
 removeAt (DCons left preccValue (DCons _ _ DNil)) 1 = list
     where list = update (DCons left preccValue DNil)
-removeAt (DCons left value (DCons _ succValue right)) 0 = list
+removeAt (DCons left _ (DCons _ succValue right)) 0 = list
     where list = update (DCons left succValue right)
-removeAt (DCons left value right) index = list
-    where list = DCons left value (removeAt right (index - 1))
+removeAt (DCons _ _ right) index = list
+    where list = left (removeAt right (index - 1))
+
+-- Функции для обновления списка
+
+update :: DList a -> DList a
+update DNil = DNil
+update (DCons DNil value DNil) = list
+    where list = DCons DNil value DNil
+update (DCons DNil value (DCons _ succValue right)) = list
+    where list = DCons DNil value (updateToRight (DCons list succValue right))
+update (DCons (DCons left precValue _) value DNil) = list
+    where list = DCons (updateToLeft (DCons left precValue list)) value DNil
+update (DCons (DCons left precValue _) value (DCons _ succValue right)) = list
+    where list = DCons (updateToLeft (DCons left precValue list)) value (updateToRight (DCons list succValue right))
 
 updateToRight :: DList a -> DList a
 updateToRight DNil = DNil
@@ -68,15 +80,4 @@ updateToLeft DNil = DNil
 updateToLeft list@(DCons DNil value right) = list
 updateToLeft (DCons (DCons left precValue _) value right) = list
     where list = DCons (updateToLeft (DCons left precValue list)) value right
-
-update :: DList a -> DList a
-update DNil = DNil
-update (DCons DNil value DNil) = list
-    where list = DCons DNil value DNil
-update (DCons DNil value (DCons _ succValue right)) = list
-    where list = DCons DNil value (updateToRight (DCons list succValue right))
-update (DCons (DCons left precValue _) value DNil) = list
-    where list = DCons (updateToLeft (DCons left precValue list)) value DNil
-update (DCons (DCons left precValue _) value (DCons _ succValue right)) = list
-    where list = DCons (updateToLeft (DCons left precValue list)) value (updateToRight (DCons list succValue right))
 
