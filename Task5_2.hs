@@ -8,15 +8,18 @@ data Zipper a = Zipper [a] [a]
 
 -- Реализуйте экземпляры классов Show и Eq для этого типа
 
-instance Show a => Show (Zipper a) where
+instance (Show a) => Show (Zipper a) where
     show (Zipper [] []) = "Zipper([][])"
-    show (Zipper l r) = "Zipper([" ++ (showL l) ++ "][" ++ (showR r) ++ "])"
-        where showL [] = ""
-              showL [e] = show e
-              showL (lh:lt) = (showL lt) ++ ", " ++ (show lh)
-              showR [] = ""
-              showR [e] = show e
-              showR (rh:rt) = (show rh) ++ ", " ++ (showR rt)
+    show (Zipper l r) = "Zipper([" ++ (showLeft l) ++ "][" ++ (showRight r) ++ "])"
+        where showLeft [] = ""
+              showLeft [e] = show e
+              showLeft (lh:lt) = (showLeft lt) ++ ", " ++ (show lh)
+              showRight [] = ""
+              showRight [e] = show e
+              showRight (rh:rt) = (show rh) ++ ", " ++ (showRight rt)
+              
+instance (Eq a) => Eq (Zipper a) where
+    (Zipper ll lr) == (Zipper rl rr) = (reverse ll ++ lr) == (reverse rl ++ rr)
 
 fromList :: [a] -> Zipper a
 fromList lst = Zipper [] lst
@@ -49,7 +52,7 @@ concat left@(Zipper ll lr) right = (Zipper ll (lr ++ rr))
     where (Zipper _ rr) = goStart right
 
 insertManyAt :: Int -> Zipper a -> Zipper a -> Zipper a
-insertManyAt index what@(Zipper wl wr) into = (Zipper (l ++ wl) (wr ++ r)) 
+insertManyAt index what@(Zipper wl wr) into = (Zipper (wl ++ l) (wr ++ r)) 
     where (Zipper l r) = (goRightMany index (goStart into))
 
 subZipper :: Int -> Int -> Zipper a -> Zipper a
