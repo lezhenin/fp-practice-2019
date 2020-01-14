@@ -45,7 +45,7 @@ minus = do
 multiplication :: Parser Integer
 multiplication = do
     spaces
-    lhv <- atom
+    lhv <- negation <|> factorial <|> atom 
     spaces
     t <- many tail
     return $ applyMany lhv t
@@ -53,7 +53,7 @@ multiplication = do
             do
                 f <- star <|> div_
                 spaces
-                rhv <- atom
+                rhv <- negation <|> factorial <|> atom
                 spaces
                 return (`f` rhv)
 
@@ -71,6 +71,25 @@ addition = do
                 rhv <- multiplication
                 spaces
                 return (`f` rhv)
+                
+negation :: Parser Integer
+negation = do 
+    spaces
+    char '-'
+    spaces
+    res <- factorial <|> atom
+    return (-res)
+    
+factorial :: Parser Integer
+factorial = do
+    spaces
+    res <- atom 
+    spaces
+    char '!'
+    return (aux res)
+    where aux 0 = 1
+          aux n = n * (aux (n - 1))
+ 
 
 atom :: Parser Integer
 atom = number <|> do
