@@ -33,9 +33,29 @@ list2dlist' left (h: t) =
 
 
 -- Реализуйте функции индексирования, вставки и удаления элементов
+
 index :: DList a -> Int -> a
 index (DCons _ value _) 0 = value
 index (DCons _ _ right) i = index right (i - 1)
+
+insertAt :: DList a -> Int -> a -> DList a
+insertAt DNil 0 newValue = list
+    where list = (DCons DNil newValue DNil)
+insertAt (DCons left value DNil) 1 newValue = list
+    where list = update (DCons left value (DCons list newValue DNil))
+insertAt (DCons left value right) 0 newValue = list
+    where list = update (DCons left newValue (DCons list value right))
+insertAt (DCons left value right) index newValue = list
+    where list = (DCons left value (insertAt right (index - 1) newValue))
+
+removeAt :: DList a -> Int -> DList a
+removeAt DNil 0 = DNil
+removeAt (DCons left preccValue (DCons _ _ DNil)) 1 = list
+    where list = update (DCons left preccValue DNil)
+removeAt (DCons left value (DCons _ succValue right)) 0 = list
+    where list = update (DCons left succValue right)
+removeAt (DCons left value right) index = list
+    where list = DCons left value (removeAt right (index - 1))
 
 updateToRight :: DList a -> DList a
 updateToRight DNil = DNil
@@ -60,22 +80,3 @@ update (DCons (DCons left precValue _) value DNil) = list
 update (DCons (DCons left precValue _) value (DCons _ succValue right)) = list
     where list = DCons (updateToLeft (DCons left precValue list)) value (updateToRight (DCons list succValue right))
 
-insertAt :: DList a -> Int -> a -> DList a
-insertAt DNil 0 newValue = list
-    where list = (DCons DNil newValue DNil)
-insertAt (DCons left value DNil) 1 newValue = list
-    where list = update (DCons left value (DCons list newValue DNil))
-insertAt (DCons left value right) 0 newValue = list
-    where list = update (DCons left newValue (DCons list value right))
-insertAt (DCons left value right) index newValue = list
-    where list = (DCons left value (insertAt right (index - 1) newValue))
-
--- todo
-removeAt :: DList a -> Int -> DList a
-removeAt DNil 0 = DNil
-removeAt (DCons left preccValue (DCons _ _ DNil)) 1 = list
-    where list = update (DCons left preccValue DNil)
-removeAt (DCons left value (DCons _ succValue right)) 0 = list
-    where list = update (DCons left succValue right)
-removeAt (DCons left value right) index = list
-    where list = DCons left value (removeAt right (index - 1))
