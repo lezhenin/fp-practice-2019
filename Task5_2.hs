@@ -56,14 +56,11 @@ insertManyAt index what@(Zipper wl wr) into = (Zipper (wl ++ l) (wr ++ r))
     where (Zipper l r) = (goRightMany index (goStart into))
 
 subZipper :: Int -> Int -> Zipper a -> Zipper a
-subZipper from to into = if new_pos > 0 
-                         then if new_pos <= to
-                               -- восстановление положения указателя 
-                              then goRightMany new_pos (goStart (Zipper il []))
-                              else (Zipper il [])
-                         else goStart (Zipper il []) 
+subZipper from to into = restorePosition (position into) from to (Zipper il [])
     where (Zipper il _) = goRightMany (to - from) (removeRightMany from (goStart into)) 
-          new_pos = (position into) - from
+          restorePosition pos from to z | (pos - from) <= 0 = goStart z
+                                        | (pos - from) > to = z
+                                        | otherwise         = goRightMany (pos - from) (goStart z)
           
 -- Вспомогательные функции  
  
