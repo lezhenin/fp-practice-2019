@@ -15,85 +15,58 @@ type Parser a = Parsec String () a
 digit :: Parser Char
 digit = oneOf ['0'..'9']
 
-number :: Parser Integer
-number = read <$> many1 digit
-
-applyMany :: a -> [a -> a] -> a
-applyMany x [] = x
-applyMany x (h:t) = applyMany (h x) t
-
-div_ :: Parser (Integer -> Integer -> Integer)
-div_ = do
-    char '/'
-    return div
-
-star :: Parser (Integer -> Integer -> Integer)
-star = do
-    char '*'
-    return (*)
-
-plus :: Parser (Integer -> Integer -> Integer)
-plus = do
-    char '+'
-    return (+)
-
-minus :: Parser (Integer -> Integer -> Integer)
-minus = do
-    char '-'
-    return (-)
-
-multiplication :: Parser Integer
-multiplication = do
-    spaces
-    lhv <- negation <|> factorial <|> atom 
-    spaces
-    t <- many tail
-    return $ applyMany lhv t
-    where tail = 
-            do
-                f <- star <|> div_
-                spaces
-                rhv <- negation <|> factorial <|> atom
-                spaces
-                return (`f` rhv)
-
-addition :: Parser Integer
-addition = do
-    spaces
-    lhv <- multiplication
-    spaces
-    t <- many tail
-    return $ applyMany lhv t
-    where tail = 
-            do
-                f <- plus <|> minus
-                spaces
-                rhv <- multiplication
-                spaces
-                return (`f` rhv)
-                
-negation :: Parser Integer
-negation = do 
-    spaces
-    char '-'
-    spaces
-    res <- factorial <|> atom
-    return (-res)
+integer :: Parser Integer
+integer = read <$> do 
+    integerPart <- (many1 digit)
+    notFollowedBy (char '.')
+    return integerPart
     
-factorial :: Parser Integer
-factorial = do
-    spaces
-    res <- atom 
-    spaces
-    char '!'
-    return (aux res)
-    where aux 0 = 1
-          aux n = n * (aux (n - 1))
- 
+float :: Parser Double
+float = read <$> do 
+    integerPart <- (many1 digit)
+    char '.'
+    fractionalPart <- (many1 digit)
+    return (integerPart ++ "." ++ fractionalPart)
 
-atom :: Parser Integer
-atom = number <|> do
-    char '('
-    res <- addition
-    char ')'
-    return res
+atom :: (Fractional b) => Parser b
+atom =  try (do { result <- float; return (fromRational $ toRational $ result) })
+    <|> try (do { result <- integer; return (fromRational $ toRational $ result) })
+    <|> try (do { char '('; result <- addition; char ')'; return result })
+
+mulOperator :: (Fractional b) => Parser (b -> b -> b)
+mulOperator =  do { char '*'; return (*) } 
+           <|> do { char '/'; return (/) }
+
+addOperator :: (Fractional b) => Parser (b -> b -> b)
+addOperator =  do { char '+'; return (+) }
+           <|> do { char '-'; return (-) }
+           
+negateOperator :: (Fractional b) => Parser (b -> b)
+negateOperator = do { char '-'; return negate }
+
+-- todo factorial
+
+-- factorialOperator :: (Num b, Ord b) => Parser (b -> b)
+-- factorialOperator = do{ char '!'; return factorial }
+--     where factorial 0 = 1
+--           factorial n | n > 0 = n * (factorial (n - 1))
+--                       | otherwise = error "Factorial is undefined for negative numbers"
+
+-- factorial :: (Num b, Ord b) => Parser b
+-- factorial = do 
+--     operand <- atom
+--     optionalOperator <- option id factorialOperator
+--     return $ optionalOperator $ operand 
+    
+multiplication :: (Fractional b) => Parser b
+multiplication = chainl1 atom mulOperator
+
+negation :: (Fractional b) => Parser b
+negation = do 
+    optionalOperator <- option id negateOperator
+    operand <- multiplication
+    return $ optionalOperator $ operand 
+      
+addition :: (Fractional b) => Parser b
+addition = chainl1 negation addOperator
+
