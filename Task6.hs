@@ -10,12 +10,51 @@ module Task6 where
 import Text.Parsec hiding(digit)
 import Data.Functor
 
+
+data Constant = IntConstant Int | FloatConstant Double
+    deriving(Show)
+
+(|+|) :: Constant -> Constant -> Constant
+(|+|) (IntConstant a) (IntConstant b) = IntConstant (a + b)
+(|+|) (FloatConstant a) (FloatConstant b) = FloatConstant (a + b)
+(|+|) (FloatConstant a) (IntConstant b) = FloatConstant (a + (fromIntegral b))
+(|+|) a b = b |+| a
+
+(|-|) :: Constant -> Constant -> Constant
+(|-|) (IntConstant a) (IntConstant b) = IntConstant (a - b)
+(|-|) (FloatConstant a) (FloatConstant b) = FloatConstant (a - b)
+(|-|) (FloatConstant a) (IntConstant b) = FloatConstant (a - (fromIntegral b))
+(|-|) a b = b |-| a
+
+(|*|) :: Constant -> Constant -> Constant
+(|*|) (IntConstant a) (IntConstant b) = IntConstant (a * b)
+(|*|) (FloatConstant a) (FloatConstant b) = FloatConstant (a * b)
+(|*|) (FloatConstant a) (IntConstant b) = FloatConstant (a * (fromIntegral b))
+(|*|) a b = b |*| a
+
+(|/|) :: Constant -> Constant -> Constant
+(|/|) (IntConstant a) (IntConstant b) = FloatConstant ((fromIntegral a) / (fromIntegral b))
+(|/|) (FloatConstant a) (FloatConstant b) = FloatConstant (a / b)
+(|/|) (FloatConstant a) (IntConstant b) = FloatConstant (a / (fromIntegral b))
+(|/|) a b = b |/| a
+
+negateConstant :: Constant -> Constant
+negateConstant (IntConstant a) = IntConstant (-a)
+negateConstant (FloatConstant a) = FloatConstant (-a)
+
+factorialConstant :: Constant -> Constant
+factorialConstant (FloatConstant n) = error ""
+factorialConstant (IntConstant 0) = IntConstant 1
+factorialConstant (IntConstant n) | n > 0 = IntConstant (product [1..n])
+                                  | otherwise = error ""
+                                                
+
 type Parser a = Parsec String () a
 
 digit :: Parser Char
 digit = oneOf ['0'..'9']
 
-integer :: Parser Integer
+integer :: Parser Int
 integer = read <$> do 
     integerPart <- (many1 digit)
     notFollowedBy (char '.')
@@ -28,45 +67,40 @@ float = read <$> do
     fractionalPart <- (many1 digit)
     return (integerPart ++ "." ++ fractionalPart)
 
-atom :: (Fractional b) => Parser b
-atom =  try (do { result <- float; return (fromRational $ toRational $ result) })
-    <|> try (do { result <- integer; return (fromRational $ toRational $ result) })
+atom :: Parser Constant
+atom =  try (do { result <- float; return $ FloatConstant $ result })
+    <|> try (do { result <- integer; return $ IntConstant $ result })
     <|> try (do { char '('; result <- addition; char ')'; return result })
 
-mulOperator :: (Fractional b) => Parser (b -> b -> b)
-mulOperator =  do { char '*'; return (*) } 
-           <|> do { char '/'; return (/) }
+multiplicationOperator :: Parser (Constant -> Constant -> Constant)
+multiplicationOperator =  do { char '*'; return (|*|) } 
+                      <|> do { char '/'; return (|/|) }
 
-addOperator :: (Fractional b) => Parser (b -> b -> b)
-addOperator =  do { char '+'; return (+) }
-           <|> do { char '-'; return (-) }
+additionOperator :: Parser (Constant -> Constant -> Constant)
+additionOperator =  do { char '+'; return (|+|) }
+                <|> do { char '-'; return (|-|) }
            
-negateOperator :: (Fractional b) => Parser (b -> b)
-negateOperator = do { char '-'; return negate }
+negationOperator :: Parser (Constant -> Constant)
+negationOperator = do { char '-'; return negateConstant }
 
--- todo factorial
+factorialOperator :: Parser (Constant -> Constant)
+factorialOperator = do{ char '!'; return factorialConstant }
 
--- factorialOperator :: (Num b, Ord b) => Parser (b -> b)
--- factorialOperator = do{ char '!'; return factorial }
---     where factorial 0 = 1
---           factorial n | n > 0 = n * (factorial (n - 1))
---                       | otherwise = error "Factorial is undefined for negative numbers"
-
--- factorial :: (Num b, Ord b) => Parser b
--- factorial = do 
---     operand <- atom
---     optionalOperator <- option id factorialOperator
---     return $ optionalOperator $ operand 
+factorial :: Parser Constant
+factorial = do 
+    operand <- atom
+    optionalOperator <- option id factorialOperator
+    return $ optionalOperator $ operand 
     
-multiplication :: (Fractional b) => Parser b
-multiplication = chainl1 atom mulOperator
+multiplication :: Parser Constant
+multiplication = chainl1 factorial multiplicationOperator
 
-negation :: (Fractional b) => Parser b
+negation :: Parser Constant
 negation = do 
-    optionalOperator <- option id negateOperator
+    optionalOperator <- option id negationOperator
     operand <- multiplication
     return $ optionalOperator $ operand 
       
-addition :: (Fractional b) => Parser b
-addition = chainl1 negation addOperator
+addition :: Parser Constant
+addition = chainl1 negation additionOperator
 
