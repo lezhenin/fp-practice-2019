@@ -66,11 +66,16 @@ float = read <$> do
     char '.'
     fractionalPart <- (many1 digit)
     return (integerPart ++ "." ++ fractionalPart)
+    
+constant :: Parser Constant 
+constant = try (do { result <- float; return $ FloatConstant $ result })
+       <|> try (do { result <- integer; return $ IntConstant $ result })
+       
+parentheses :: Parser Constant    
+parentheses = do { char '('; result <- addition; char ')'; return result }
 
 atom :: Parser Constant
-atom =  try (do { result <- float; return $ FloatConstant $ result })
-    <|> try (do { result <- integer; return $ IntConstant $ result })
-    <|> try (do { char '('; result <- addition; char ')'; return result })
+atom =  constant <|> parentheses
 
 multiplicationOperator :: Parser (Constant -> Constant -> Constant)
 multiplicationOperator =  do { char '*'; return (|*|) } 
